@@ -2,6 +2,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 import { IPost } from '~/types/post';
 import { IUser } from '~/types/user';
+import { wait } from '~/utils/wait';
 
 const BASE_URL = 'https://jsonplaceholder.typicode.com';
 
@@ -13,16 +14,24 @@ export const apiSlice = createApi({
   tagTypes: ['Post'],
   endpoints: (builder) => ({
     fetchAllPosts: builder.query<IPost[], { userId: number | null }>({
-      query: ({ userId }) => {
+      queryFn: async({ userId }, api, extraOptions, baseQuery) => {
         let URL = '/posts';
 
         if (userId) URL += `?userId=${userId}`;
 
-        return URL;
+        const response = await baseQuery(URL);
+        const data = response.data as IPost[];
+        await wait(2000);
+        return { data };
       },
     }),
     fetchAllUsers: builder.query<IUser[], void>({
-      query: () => '/users',
+      queryFn: async(arg, api, extraOptions, baseQuery) => {
+        const response = await baseQuery('/users');
+        const data = response.data as IUser[];
+        await wait(2000);
+        return { data };
+      },
     }),
     createPost: builder.mutation<IPost, Omit<IPost, 'id'>>({
       query: (post) => ({
